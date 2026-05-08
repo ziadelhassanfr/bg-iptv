@@ -11,9 +11,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.bgiptv.app.core.security.CredentialsManager
+import com.bgiptv.app.core.work.WorkScheduler
 import com.bgiptv.app.feature.browser.BrowserScreen
 import com.bgiptv.app.feature.player.PlayerScreen
 import com.bgiptv.app.feature.search.SearchScreen
+import com.bgiptv.app.feature.settings.SettingsScreen
 import com.bgiptv.app.feature.setup.SetupScreen
 import com.bgiptv.app.ui.theme.BgIptvTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -24,6 +26,7 @@ object Routes {
     const val BROWSER = "browser"
     const val PLAYER = "player/{streamId}"
     const val SEARCH = "search"
+    const val SETTINGS = "settings"
 
     fun player(streamId: Int) = "player/$streamId"
 }
@@ -32,9 +35,15 @@ object Routes {
 class MainActivity : ComponentActivity() {
 
     @Inject lateinit var credentialsManager: CredentialsManager
+    @Inject lateinit var workScheduler: WorkScheduler
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (credentialsManager.hasCredentials()) {
+            workScheduler.scheduleEpgRefresh()
+            workScheduler.scheduleLiveScorePolling()
+        }
 
         setContent {
             BgIptvTheme {
@@ -50,6 +59,8 @@ class MainActivity : ComponentActivity() {
                     composable(Routes.SETUP) {
                         SetupScreen(
                             onSetupComplete = {
+                                workScheduler.scheduleEpgRefresh()
+                                workScheduler.scheduleLiveScorePolling()
                                 navController.navigate(Routes.BROWSER) {
                                     popUpTo(Routes.SETUP) { inclusive = true }
                                 }
@@ -64,6 +75,9 @@ class MainActivity : ComponentActivity() {
                             },
                             onSearch = {
                                 navController.navigate(Routes.SEARCH)
+                            },
+                            onSettings = {
+                                navController.navigate(Routes.SETTINGS)
                             },
                         )
                     }
@@ -87,9 +101,14 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             onSelectEvent = { _ ->
-                                // TODO: navigate to event detail / play best channel
                                 navController.popBackStack()
                             },
+                            onDismiss = { navController.popBackStack() },
+                        )
+                    }
+
+                    composable(Routes.SETTINGS) {
+                        SettingsScreen(
                             onDismiss = { navController.popBackStack() },
                         )
                     }

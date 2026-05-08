@@ -1,5 +1,6 @@
 package com.bgiptv.app.feature.setup
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -8,6 +9,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.Image
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -42,7 +45,7 @@ fun SetupScreen(
                 onManualSetup = viewModel::startManualSetup,
             )
             SetupStep.QR_PAIRING -> QrPairingStep(
-                qrData = uiState.qrData,
+                qrBitmap = uiState.qrBitmap,
                 localUrl = uiState.localUrl,
                 onCancel = viewModel::cancelSetup,
             )
@@ -115,7 +118,7 @@ fun WelcomeStep(
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun QrPairingStep(
-    qrData: String?,
+    qrBitmap: Bitmap?,
     localUrl: String?,
     onCancel: () -> Unit,
 ) {
@@ -128,14 +131,21 @@ fun QrPairingStep(
 
         Spacer(Modifier.height(8.dp))
 
-        // QR placeholder — real QR rendered via a Bitmap in production
         Box(
             modifier = Modifier
-                .size(200.dp)
+                .size(220.dp)
                 .background(Color.White),
             contentAlignment = Alignment.Center,
         ) {
-            Text("QR CODE", color = Color.Black, fontFamily = FontFamily.Monospace)
+            if (qrBitmap != null) {
+                Image(
+                    bitmap = qrBitmap.asImageBitmap(),
+                    contentDescription = "QR Code setup",
+                    modifier = Modifier.size(200.dp),
+                )
+            } else {
+                Text("⏳", fontSize = 32.sp)
+            }
         }
 
         Spacer(Modifier.height(8.dp))

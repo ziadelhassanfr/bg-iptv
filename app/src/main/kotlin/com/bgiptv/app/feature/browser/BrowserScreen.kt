@@ -32,19 +32,19 @@ import com.bgiptv.app.ui.theme.BgSurfaceVariant
 fun BrowserScreen(
     onPlayChannel: (Int) -> Unit = {},
     onSearch: () -> Unit = {},
+    onSettings: () -> Unit = {},
     viewModel: BrowserViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        // TV player surface would be here (behind the browser)
-
         BrowserOverlay(
             uiState = uiState,
             onGroupSelected = viewModel::selectGroup,
             onToggleFavorite = viewModel::toggleFavorite,
             onPlayChannel = onPlayChannel,
             onSearch = onSearch,
+            onSettings = onSettings,
         )
     }
 }
@@ -57,6 +57,7 @@ fun BrowserOverlay(
     onToggleFavorite: (Int, Boolean) -> Unit,
     onPlayChannel: (Int) -> Unit = {},
     onSearch: () -> Unit = {},
+    onSettings: () -> Unit = {},
 ) {
     val overlayBackground = if (uiState.isOverlay) BgOverlay else Color.Black
 
@@ -99,6 +100,8 @@ fun BrowserOverlay(
     // Footer bar
     BrowserFooter(
         channelName = uiState.currentProgramTitle ?: "BG IPTV",
+        onSearch = onSearch,
+        onSettings = onSettings,
         modifier = Modifier.fillMaxSize()
     )
 }
@@ -337,6 +340,8 @@ fun EventRow(event: SportEventEntity) {
 @Composable
 fun BrowserFooter(
     channelName: String,
+    onSearch: () -> Unit = {},
+    onSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier, contentAlignment = Alignment.BottomCenter) {
@@ -355,19 +360,21 @@ fun BrowserFooter(
                 overflow = TextOverflow.Ellipsis,
             )
             Row(modifier = Modifier.fillMaxWidth()) {
-                FooterHint("🟡", "Recherche")
+                FooterHint("🟡", "Recherche", onClick = onSearch)
                 FooterHint("🔵", "Radar")
                 FooterHint("⭐", "Favori")
-                FooterHint("≡", "Menu")
+                FooterHint("≡", "Réglages", onClick = onSettings)
             }
         }
     }
 }
 
 @Composable
-fun RowScope.FooterHint(icon: String, label: String) {
+fun RowScope.FooterHint(icon: String, label: String, onClick: (() -> Unit)? = null) {
     Row(
-        modifier = Modifier.weight(1f),
+        modifier = Modifier
+            .weight(1f)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(icon, fontSize = 10.sp)

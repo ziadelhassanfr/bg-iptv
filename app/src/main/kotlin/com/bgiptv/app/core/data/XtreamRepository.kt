@@ -181,6 +181,12 @@ class XtreamRepository @Inject constructor(
         }
     }
 
+    suspend fun refreshEpg(credentials: XtreamCredentials) = withContext(Dispatchers.IO) {
+        val api = apiFor(credentials.serverUrl)
+        val channels = channelDao.getAllSync()
+        importEpgForChannels(api, credentials, channels, batchSize = 20) {}
+    }
+
     fun buildStreamUrl(credentials: XtreamCredentials, streamId: Int): String =
         "${credentials.serverUrl}/live/${credentials.username}/${credentials.password}/$streamId"
 

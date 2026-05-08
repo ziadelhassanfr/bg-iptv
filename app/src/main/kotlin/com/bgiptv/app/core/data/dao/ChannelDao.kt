@@ -51,6 +51,9 @@ interface ChannelDao {
     @Query("DELETE FROM channels")
     suspend fun deleteAll()
 
+    @Query("SELECT * FROM channels WHERE isHidden = 0 ORDER BY lcn ASC, name ASC")
+    suspend fun getAllSync(): List<ChannelEntity>
+
     @Query("SELECT COUNT(*) FROM channels")
     suspend fun count(): Int
 
