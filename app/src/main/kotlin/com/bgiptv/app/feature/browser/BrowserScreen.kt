@@ -46,6 +46,23 @@ fun BrowserScreen(
             onSearch = onSearch,
             onSettings = onSettings,
         )
+
+        if (uiState.isImporting) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xCC1A3A5C))
+                    .padding(12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "⏳  Import en cours... ${uiState.importedChannels} chaînes",
+                    color = Color(0xFF4A9EFF),
+                    fontSize = 13.sp,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                )
+            }
+        }
     }
 }
 

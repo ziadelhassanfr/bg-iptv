@@ -2,11 +2,13 @@ package com.bgiptv.app.feature.browser
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bgiptv.app.core.data.XtreamRepository
 import com.bgiptv.app.core.data.dao.ChannelDao
 import com.bgiptv.app.core.data.dao.SportEventDao
 import com.bgiptv.app.core.data.dao.WatchHistoryDao
 import com.bgiptv.app.core.data.entity.ChannelEntity
 import com.bgiptv.app.core.data.entity.SportEventEntity
+import com.bgiptv.app.core.security.CredentialsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -34,8 +36,9 @@ data class BrowserUiState(
     val currentChannelId: Int? = null,
     val currentProgramTitle: String? = null,
     val isOverlay: Boolean = false,
-    val searchQuery: String = "",
     val isLoading: Boolean = true,
+    val isImporting: Boolean = false,
+    val importedChannels: Int = 0,
 )
 
 @HiltViewModel
@@ -43,6 +46,8 @@ class BrowserViewModel @Inject constructor(
     private val channelDao: ChannelDao,
     private val sportEventDao: SportEventDao,
     private val watchHistoryDao: WatchHistoryDao,
+    private val credentialsManager: CredentialsManager,
+    private val xtreamRepository: XtreamRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BrowserUiState())
@@ -52,7 +57,29 @@ class BrowserViewModel @Inject constructor(
     private val twoHoursFromNow get() = now + 2 * 60 * 60 * 1000L
 
     init {
+        viewModelScope.launch {
+            // Auto-import if credentials exist but no channels yet
+            val count = channelDao.count()
+            if (count == 0 && credentialsManager.hasCredentials()) {
+                triggerImport()
+            }
+        }
         observeGroups()
+    }
+
+    private fun triggerImport() {
+        val creds = credentialsManager.getCredentials() ?: return
+        _uiState.update { it.copy(isImporting = true) }
+        viewModelScope.launch {
+            xtreamRepository.importAll(creds) { progress ->
+                _uiState.update {
+                    it.copy(
+                        importedChannels = progress.channels,
+                        isImporting = !progress.isComplete,
+                    )
+                }
+            }
+        }
     }
 
     private fun observeGroups() {
@@ -67,7 +94,6 @@ class BrowserViewModel @Inject constructor(
                 buildGroups(liveEvents, upcomingEvents, groupTags, countries, recent)
             }.collect { groups ->
                 _uiState.update { it.copy(groups = groups, isLoading = false) }
-                // Load content for currently selected group
                 loadGroupContent(_uiState.value.selectedGroupIndex)
             }
         }
@@ -92,18 +118,15 @@ class BrowserViewModel @Inject constructor(
             groups += BrowserGroup("recent", "REPRENDRE", "⏯", recent.size)
         }
 
-        // Sport groups (from group tags)
         groupTags.filter { it.endsWith("_SPORT") || it == "FOOT" || it == "F1" || it == "NBA" }
             .forEach { tag ->
                 groups += BrowserGroup(tag, formatGroupLabel(tag), sportEmoji(tag), 0)
             }
 
-        // Country groups
         countries.take(8).forEach { code ->
             groups += BrowserGroup("country_$code", code, countryFlag(code), 0)
         }
 
-        // Thematic groups
         listOf("NEWS", "CINEMA", "JEUNESSE", "DOCS", "MUSIQUE").forEach { tag ->
             if (groupTags.contains(tag)) {
                 groups += BrowserGroup(tag, formatGroupLabel(tag), themeEmoji(tag), 0)
