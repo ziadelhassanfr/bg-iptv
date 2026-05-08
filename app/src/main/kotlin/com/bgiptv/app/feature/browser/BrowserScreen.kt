@@ -337,6 +337,7 @@ fun EventRow(event: SportEventEntity) {
     }
 }
 
+@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun BrowserFooter(
     channelName: String,
@@ -369,6 +370,7 @@ fun BrowserFooter(
     }
 }
 
+@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun RowScope.FooterHint(icon: String, label: String, onClick: (() -> Unit)? = null) {
     Row(
