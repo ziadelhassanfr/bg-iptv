@@ -169,7 +169,7 @@ fun GroupsColumn(
 
             // Separators between sections
             if (index == 2 || index == groups.indexOfLast { it.tag.contains("SPORT") || it.tag in listOf("FOOT","F1","NBA") }) {
-                Divider(color = Color(0x22FFFFFF), modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+                Box(Modifier.fillMaxWidth().height(1.dp).padding(horizontal = 12.dp).background(Color(0x22FFFFFF)))
             }
         }
     }
@@ -194,7 +194,7 @@ fun ContentColumn(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
-        Divider(color = Color(0x22FFFFFF))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0x22FFFFFF)))
 
         when (content) {
             is BrowserContent.Channels -> ChannelList(
