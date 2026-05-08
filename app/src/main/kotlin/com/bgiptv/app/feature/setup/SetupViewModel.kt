@@ -3,6 +3,7 @@ package com.bgiptv.app.feature.setup
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bgiptv.app.core.data.XtreamRepository
 import com.bgiptv.app.core.security.CredentialsManager
 import com.bgiptv.app.core.security.XtreamCredentials
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,6 +35,7 @@ data class SetupUiState(
 class SetupViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val credentialsManager: CredentialsManager,
+    private val xtreamRepository: XtreamRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SetupUiState())
@@ -99,14 +101,14 @@ class SetupViewModel @Inject constructor(
     private fun startImport(credentials: XtreamCredentials) {
         _uiState.update { it.copy(step = SetupStep.IMPORTING) }
         viewModelScope.launch {
-            // TODO: call XtreamRepository.importAll(credentials)
-            // For now, simulate progress
-            kotlinx.coroutines.delay(1000)
-            _uiState.update { it.copy(importedChannels = 1247) }
-            kotlinx.coroutines.delay(800)
-            _uiState.update { it.copy(importedEpg = 8432) }
-            kotlinx.coroutines.delay(1500)
-            _uiState.update { it.copy(importedVod = 1200, isComplete = true) }
+            xtreamRepository.importAll(credentials) { progress ->
+                _uiState.update { it.copy(
+                    importedChannels = progress.channels,
+                    importedEpg = progress.epg,
+                    importedVod = progress.vod,
+                    isComplete = progress.isComplete,
+                ) }
+            }
         }
     }
 
