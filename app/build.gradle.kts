@@ -109,6 +109,9 @@ dependencies {
     // Local HTTP server (QR setup pairing)
     implementation(libs.nanohttpd)
 
+    // QR code generation
+    implementation(libs.zxing.core)
+
     // DataStore
     implementation(libs.datastore.preferences)
 
