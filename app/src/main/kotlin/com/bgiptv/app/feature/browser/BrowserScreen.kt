@@ -1,6 +1,7 @@
 package com.bgiptv.app.feature.browser
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,6 +30,8 @@ import com.bgiptv.app.ui.theme.BgSurfaceVariant
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun BrowserScreen(
+    onPlayChannel: (Int) -> Unit = {},
+    onSearch: () -> Unit = {},
     viewModel: BrowserViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -40,6 +43,8 @@ fun BrowserScreen(
             uiState = uiState,
             onGroupSelected = viewModel::selectGroup,
             onToggleFavorite = viewModel::toggleFavorite,
+            onPlayChannel = onPlayChannel,
+            onSearch = onSearch,
         )
     }
 }
@@ -50,6 +55,8 @@ fun BrowserOverlay(
     uiState: BrowserUiState,
     onGroupSelected: (Int) -> Unit,
     onToggleFavorite: (Int, Boolean) -> Unit,
+    onPlayChannel: (Int) -> Unit = {},
+    onSearch: () -> Unit = {},
 ) {
     val overlayBackground = if (uiState.isOverlay) BgOverlay else Color.Black
 
@@ -82,6 +89,7 @@ fun BrowserOverlay(
             content = uiState.rightContent,
             groupLabel = uiState.groups.getOrNull(uiState.selectedGroupIndex)?.label ?: "",
             onToggleFavorite = onToggleFavorite,
+            onPlayChannel = onPlayChannel,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
@@ -173,6 +181,7 @@ fun ContentColumn(
     content: BrowserContent,
     groupLabel: String,
     onToggleFavorite: (Int, Boolean) -> Unit,
+    onPlayChannel: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -191,6 +200,7 @@ fun ContentColumn(
             is BrowserContent.Channels -> ChannelList(
                 channels = content.channels,
                 onToggleFavorite = onToggleFavorite,
+                onPlayChannel = onPlayChannel,
             )
             is BrowserContent.Events -> EventList(events = content.events)
             BrowserContent.Empty -> Box(
@@ -208,10 +218,11 @@ fun ContentColumn(
 fun ChannelList(
     channels: List<ChannelEntity>,
     onToggleFavorite: (Int, Boolean) -> Unit,
+    onPlayChannel: (Int) -> Unit = {},
 ) {
     LazyColumn(contentPadding = PaddingValues(bottom = 48.dp)) {
         itemsIndexed(channels) { _, channel ->
-            ChannelRow(channel = channel, onToggleFavorite = onToggleFavorite)
+            ChannelRow(channel = channel, onToggleFavorite = onToggleFavorite, onPlay = { onPlayChannel(channel.streamId) })
         }
     }
 }
@@ -221,6 +232,7 @@ fun ChannelList(
 fun ChannelRow(
     channel: ChannelEntity,
     onToggleFavorite: (Int, Boolean) -> Unit,
+    onPlay: () -> Unit = {},
 ) {
     var isFocused by remember { mutableStateOf(false) }
 
@@ -231,7 +243,8 @@ fun ChannelRow(
             .background(if (isFocused) Color(0x22FFFFFF) else Color.Transparent)
             .onFocusChanged { isFocused = it.isFocused }
             .focusable()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
+            .then(Modifier.clickable { onPlay() }),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (channel.isFavorite) {
