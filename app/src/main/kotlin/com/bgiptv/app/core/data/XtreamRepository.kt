@@ -104,7 +104,7 @@ class XtreamRepository @Inject constructor(
                     groupId = stream.categoryId ?: "",
                     groupTag = groupTag,
                     countryCode = countryCode,
-                    iconUrl = stream.streamIcon,
+                    iconUrl = stream.iconUrl,
                     epgChannelId = stream.epgChannelId,
                     quality = quality,
                     hasCatchup = (stream.tvArchive ?: 0) > 0,
